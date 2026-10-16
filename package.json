@@ -1,0 +1,39 @@
+{
+  "name": "kintore",
+  "version": "1.0.0",
+  "description": "エビデンスベースの筋トレ・増量記録PWA",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmhzakkmkm8-gif/kintore.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kmhzakkmkm8-gif/kintore/issues"
+  },
+  "homepage": "https://github.com/kmhzakkmkm8-gif/kintore#readme",
+  "dependencies": {
+    "firebase": "^11.10.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.15.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefixer": "^10.6.1",
+    "postcss": "^8.5.30",
+    "tailwindcss": "^3.4.19",
+    "vite": "^6.4.4",
+    "vite-plugin-pwa": "^0.21.2",
+    "vitest": "^3.2.7"
+  },
+  "private": true,
+  "type": "module"
+}
