@@ -13,7 +13,7 @@ import {
   trendStatus,
   weeklyExport,
 } from './calc.js';
-import { DEFAULT_EXERCISES, DEFAULT_PROGRAM, defaultSettings } from './defaults.js';
+import { DEFAULT_EXERCISES, DEFAULT_PROGRAM, UPPER_LOWER_PROGRAM, defaultSettings } from './defaults.js';
 import { addDays, weekStart } from './dates.js';
 import { buildDraft, draftToSession, reachedTop } from './workout.js';
 
@@ -215,5 +215,32 @@ describe('exerciseHistory', () => {
       'bench',
     );
     expect(h.map((x) => x.sessionId)).toEqual(['a', 'b']);
+  });
+});
+
+describe('上半身／下半身プログラム', () => {
+  const p = UPPER_LOWER_PROGRAM;
+  const weekly = (sessionsPerWeek) => {
+    const out = {};
+    for (const d of p.days)
+      for (const [m, v] of Object.entries(plannedMuscleLoad(d.items, exMap)))
+        out[m] = (out[m] || 0) + (v * sessionsPerWeek) / p.days.length;
+    return out;
+  };
+  it('全種目が種目マスタにあり、1回あたり11セット以内', () => {
+    for (const d of p.days) {
+      for (const it of d.items) expect(exMap[it.exerciseId]).toBeTruthy();
+      for (const v of Object.values(plannedMuscleLoad(d.items, exMap))) expect(v).toBeLessThanOrEqual(11);
+    }
+  });
+  it('週4回で主要部位が週9セット以上、週5回でも20セット以下', () => {
+    const w4 = weekly(4);
+    for (const m of ['胸', '背中', '脚前', '脚裏']) expect(w4[m]).toBeGreaterThanOrEqual(9);
+    for (const v of Object.values(weekly(5))) expect(v).toBeLessThanOrEqual(20);
+  });
+  it('順番に回る（週の回数に関係なく 上A→下A→上B→下B）', () => {
+    const s = (date, dayLabel) => ({ date, dayLabel, programId: p.id });
+    expect(nextDayLabel([s('2026-10-19', '上A'), s('2026-10-20', '下A'), s('2026-10-22', '上B')], p)).toBe('下B');
+    expect(nextDayLabel([s('2026-10-19', '下B')], p)).toBe('上A');
   });
 });

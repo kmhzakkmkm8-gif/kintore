@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useData } from '../lib/store.jsx';
 import { navigate } from '../lib/nav.js';
-import { addDays, fromKey, todayKey, weekdayLabel } from '../lib/dates.js';
+import { addDays, fromKey, todayKey, weekStart, weekdayLabel } from '../lib/dates.js';
 import {
   exerciseHistory,
   movingAverage,
@@ -29,6 +29,7 @@ export default function Home() {
   const [dayLabel, setDayLabel] = useState(suggested);
   const day = activeProgram?.days.find((d) => d.label === dayLabel);
   const doneToday = sessions.some((s) => s.date === today);
+  const weekCount = sessions.filter((s) => s.date >= weekStart(today) && s.date <= today).length;
 
   const start = () => {
     saveDraft(buildDraft({ program: activeProgram, dayLabel, date: today, sessions, exMap, deload }));
@@ -94,13 +95,13 @@ export default function Home() {
         right={
           !draft &&
           activeProgram && (
-            <div className="flex gap-1">
+            <div className="flex flex-wrap justify-end gap-1">
               {activeProgram.days.map((d) => (
                 <button
                   key={d.label}
                   type="button"
                   onClick={() => setDayLabel(d.label)}
-                  className={`w-9 h-9 rounded-lg font-bold ${dayLabel === d.label ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'}`}
+                  className={`min-w-9 h-9 px-2 rounded-lg font-bold text-sm ${dayLabel === d.label ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'}`}
                 >
                   {d.label}
                 </button>
@@ -124,7 +125,8 @@ export default function Home() {
           <div className="space-y-3">
             {doneToday && <p className="text-xs text-emerald-400">今日のトレーニングは記録済みです。</p>}
             <p className="text-xs text-slate-400">
-              {dayLabel === suggested ? '前回の続き（A/B交互）' : `次の予定は${suggested}の日`}
+              {dayLabel === suggested ? '前回の続き（順番に回す）' : `次の予定は${suggested}の日`}
+              {' ・ '}今週{weekCount}回{doneToday ? '' : `（今日で${weekCount + 1}回目）`}
             </p>
             <ul className="divide-y divide-slate-800">
               {day.items.map((it, i) => {

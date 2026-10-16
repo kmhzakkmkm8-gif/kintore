@@ -3,18 +3,20 @@ import { useData } from '../lib/store.jsx';
 import { isFirebaseConfigured, logout } from '../lib/backend.js';
 import { addDays, shortLabel, todayKey, weekStart } from '../lib/dates.js';
 import { dailyCSV, plannedMuscleLoad, setsCSV, weeklyExport } from '../lib/calc.js';
-import { MUSCLES, REVIEW_PROMPT, SESSION_SET_CAP } from '../lib/defaults.js';
+import { MUSCLES, PROGRAM_TEMPLATES, REVIEW_PROMPT, SESSION_SET_CAP } from '../lib/defaults.js';
 import { Button, Card, Chip, Field, Modal, NumberInput, copyText, download, inputCls, useToast } from '../components/ui.jsx';
 import { ExercisePicker } from './Workout.jsx';
 
 export default function Settings() {
+  const { activeProgram } = useData();
   const [toast, showToast] = useToast();
   return (
     <div className="space-y-3 pt-2">
       <h1 className="text-xl font-bold">設定・データ</h1>
       <WeeklyExport showToast={showToast} />
       <Targets showToast={showToast} />
-      <ProgramEditor showToast={showToast} />
+      <ProgramSwitcher showToast={showToast} />
+      <ProgramEditor key={activeProgram?.id} showToast={showToast} />
       <ExerciseMaster />
       <DataTools showToast={showToast} />
       <Account />
@@ -100,20 +102,62 @@ function Targets({ showToast }) {
   );
 }
 
+function ProgramSwitcher({ showToast }) {
+  const { programs, activeProgram, saveProgram, activateProgram } = useData();
+  const options = [
+    ...programs,
+    ...PROGRAM_TEMPLATES.filter((t) => !programs.some((p) => p.id === t.id)),
+  ];
+  return (
+    <Card title="プログラムの切り替え">
+      <div className="space-y-2">
+        {options.map((p) => {
+          const active = p.id === activeProgram?.id;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              disabled={active}
+              onClick={() => {
+                if (!programs.some((x) => x.id === p.id)) saveProgram({ ...p, active: true });
+                activateProgram(p.id);
+                showToast(`「${p.name}」に切り替えました`);
+              }}
+              className={`w-full text-left rounded-xl p-3 border ${
+                active ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 bg-slate-800/60 active:bg-slate-700'
+              }`}
+            >
+              <div className="text-sm font-bold">
+                {p.name}
+                {active && <span className="ml-2 text-xs text-emerald-400 whitespace-nowrap">使用中</span>}
+              </div>
+              <div className="text-[11px] text-slate-400 mt-0.5">{p.days.map((d) => d.label).join(' → ')} を順番に回す</div>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-slate-500 mt-2">
+        曜日は固定しません。ジムに行った日に次の日をやるだけなので、週3〜5回のどれでも続けられます。切り替えても過去の記録や前回値はそのまま使われます。
+      </p>
+    </Card>
+  );
+}
+
 function ProgramEditor({ showToast }) {
   const data = useData();
   const { activeProgram, exMap } = data;
   const [p, setP] = useState(activeProgram);
   const [picker, setPicker] = useState(null); // { day, index | null }
+  const [perWeekCount, setPerWeekCount] = useState(p?.days.length >= 4 ? 4 : 3);
   if (!p) return null;
   const dirty = JSON.stringify(p) !== JSON.stringify(activeProgram);
 
   const updDay = (di, fn) => setP({ ...p, days: p.days.map((d, j) => (j === di ? fn(d) : d)) });
   const updItem = (di, ii, patch) => updDay(di, (d) => ({ ...d, items: d.items.map((it, j) => (j === ii ? { ...it, ...patch } : it)) }));
 
-  // 週あたりの部位別セット数の見込み（A-B-A / B-A-B の2週平均 = 各日1.5回/週）
+  // 週あたりの部位別セット数の見込み（順番に回すので、各日の週あたり回数 = 週の回数 ÷ 日数）
   const perWeek = {};
-  const freq = p.days.length ? 3 / p.days.length : 0;
+  const freq = p.days.length ? perWeekCount / p.days.length : 0;
   for (const d of p.days) {
     for (const [m, v] of Object.entries(plannedMuscleLoad(d.items, exMap))) perWeek[m] = (perWeek[m] || 0) + v * freq;
   }
@@ -197,7 +241,16 @@ function ProgramEditor({ showToast }) {
         </Button>
 
         <div>
-          <div className="text-xs text-slate-400 mb-1">週3回で回した場合の部位別 週セット数（0.5換算）</div>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-slate-400">部位別 週セット数の見込み（0.5換算）</span>
+            <div className="flex gap-1">
+              {[3, 4, 5].map((n) => (
+                <Chip key={n} active={perWeekCount === n} className="text-xs px-2 py-0.5" onClick={() => setPerWeekCount(n)}>
+                  週{n}回
+                </Chip>
+              ))}
+            </div>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {MUSCLES.map((m) => {
               const v = Math.round((perWeek[m] || 0) * 2) / 2;

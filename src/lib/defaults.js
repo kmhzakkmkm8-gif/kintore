@@ -70,6 +70,64 @@ export const DEFAULT_PROGRAM = {
   ],
 };
 
+// 上半身／下半身の分割（週4回で各部位を週2回）。曜日固定ではなく 上A→下A→上B→下B を順番に回すので、
+// 週3回の週は少なめ・週5回の週は多めになるだけで崩れない
+export const UPPER_LOWER_PROGRAM = {
+  id: 'upper-lower',
+  name: '上半身／下半身（週4回目安・3〜5回OK）',
+  active: false,
+  days: [
+    {
+      label: '上A',
+      items: [
+        { exerciseId: 'bench', sets: 3, repMin: 6, repMax: 10 },
+        { exerciseId: 'latpull', sets: 3, repMin: 8, repMax: 12 },
+        { exerciseId: 'inclinedb', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'seatedrow', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'lateral', sets: 3, repMin: 12, repMax: 20 },
+        { exerciseId: 'inclinecurl', sets: 2, repMin: 10, repMax: 15 },
+        { exerciseId: 'ohext', sets: 3, repMin: 10, repMax: 15 },
+      ],
+    },
+    {
+      label: '下A',
+      items: [
+        { exerciseId: 'squat', sets: 3, repMin: 6, repMax: 10 },
+        { exerciseId: 'rdl', sets: 3, repMin: 8, repMax: 12 },
+        { exerciseId: 'legext', sets: 2, repMin: 10, repMax: 15 },
+        { exerciseId: 'seatedlegcurl', sets: 2, repMin: 10, repMax: 15 },
+        { exerciseId: 'calf', sets: 3, repMin: 10, repMax: 15 },
+        { exerciseId: 'cablecrunch', sets: 2, repMin: 10, repMax: 15 },
+      ],
+    },
+    {
+      label: '上B',
+      items: [
+        { exerciseId: 'inclinedb', sets: 3, repMin: 8, repMax: 12 },
+        { exerciseId: 'pullup', sets: 3, repMin: 6, repMax: 12 },
+        { exerciseId: 'chestpress', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'dbrow', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'cablelateral', sets: 3, repMin: 12, repMax: 20 },
+        { exerciseId: 'hammercurl', sets: 2, repMin: 10, repMax: 15 },
+        { exerciseId: 'pushdown', sets: 2, repMin: 10, repMax: 15 },
+      ],
+    },
+    {
+      label: '下B',
+      items: [
+        { exerciseId: 'legpress', sets: 3, repMin: 10, repMax: 15 },
+        { exerciseId: 'lyinglegcurl', sets: 3, repMin: 10, repMax: 15 },
+        { exerciseId: 'bulgarian', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'hipthrust', sets: 2, repMin: 8, repMax: 12 },
+        { exerciseId: 'calf', sets: 3, repMin: 10, repMax: 15 },
+        { exerciseId: 'cablecrunch', sets: 2, repMin: 10, repMax: 15 },
+      ],
+    },
+  ],
+};
+
+export const PROGRAM_TEMPLATES = [DEFAULT_PROGRAM, UPPER_LOWER_PROGRAM];
+
 export function defaultSettings(today) {
   return {
     heightCm: 172,
