@@ -1,0 +1,12 @@
+{
+  "name": "utawaku-live",
+  "version": "0.1.0",
+  "description": "YouTube歌枠のためのブラウザ製ライブミキサー（配信用DAWの代わり）",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/dsp_test.mjs"
+  },
+  "license": "MIT"
+}

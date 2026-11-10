@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UTAWAKU LIVE</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff4f8b'/%3E%3Crect x='12' y='6' width='8' height='14' rx='4' fill='white'/%3E%3Cpath d='M9 16a7 7 0 0 0 14 0M16 23v4' stroke='white' stroke-width='2' fill='none'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="dot"></span>UTAWAKU <b>LIVE</b><small>歌枠ライブミキサー</small></div>
+    <div class="status" id="status">エンジン停止中</div>
+    <div class="actions">
+      <button id="btnStart" class="primary">▶ エンジン起動</button>
+      <button id="btnRec" disabled title="配信ミックスを録音してダウンロード">● 録音</button>
+      <button id="btnPanic" disabled class="danger" title="Esc：配信とモニターを即ミュート">PANIC</button>
+    </div>
+  </header>
+
+  <section class="setup card" id="setup">
+    <div class="setup-grid">
+      <div class="io">
+        <h3>🎤 マイク</h3>
+        <select id="selMic" disabled></select>
+        <div class="hint" id="micInfo">起動後に選択できます</div>
+      </div>
+      <div class="io">
+        <h3>🎵 伴奏（カラオケ音源）</h3>
+        <div class="btnrow">
+          <button id="btnTab" disabled title="YouTube のタブを選び「タブの音声も共有する」をオン">YouTubeタブを取り込む</button>
+          <select id="selMusicDev" disabled><option value="">オーディオ入力から…</option></select>
+          <label class="filebtn">ファイル<input type="file" id="fileMusic" accept="audio/*,video/*" disabled hidden /></label>
+        </div>
+        <div class="hint" id="musicInfo">未接続</div>
+        <div id="playerSlot"></div>
+      </div>
+      <div class="io">
+        <h3>🎧 モニター出力（イヤホン）</h3>
+        <select id="selMonOut" disabled></select>
+        <h3>📡 配信出力（OBS へ）</h3>
+        <select id="selStreamOut" disabled></select>
+        <div class="hint">VB-CABLE / BlackHole などの仮想デバイスを選び、OBS の音声入力キャプチャでそれを取り込みます</div>
+      </div>
+      <div class="io">
+        <h3>⏱ 遅延補正</h3>
+        <div id="compSlot"></div>
+        <div class="btnrow">
+          <button id="btnLatency" disabled>自動推定</button>
+          <span class="hint" id="latInfo"></span>
+        </div>
+        <div class="hint">イヤホンで聴いた伴奏に合わせて歌うと、配信上では声が往復レイテンシ分遅れます。その分、配信側の伴奏だけを遅らせて揃えます。</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scenes card">
+    <div class="scene-head">
+      <h3>シーン <small>1〜6キーで呼び出し / Shift+数字で現在値を保存 / ダブルクリックで名前変更</small></h3>
+      <div class="scene-tools">
+        <span class="chip" id="midiInfo">MIDI: —</span>
+        <button id="btnTap" title="T キー">TAP <span id="bpmShow"></span></button>
+        <button id="btnThrow" title="D キーを押している間、ディレイに送る（手動スロー）">✋ THROW</button>
+        <button id="btnExport">書き出し</button>
+        <label class="filebtn">読み込み<input type="file" id="fileImport" accept="application/json" hidden /></label>
+      </div>
+    </div>
+    <div class="scene-row" id="sceneRow"></div>
+  </section>
+
+  <main class="console">
+    <div class="strip" data-strip="vocal">
+      <div class="strip-head"><h2>VOCAL</h2><canvas class="meter" id="mVocal" width="120" height="14"></canvas></div>
+    </div>
+    <div class="strip" data-strip="fx">
+      <div class="strip-head"><h2>FX</h2><span class="chip" id="throwChip">THROW</span></div>
+    </div>
+    <div class="strip" data-strip="music">
+      <div class="strip-head"><h2>MUSIC</h2><canvas class="meter" id="mMusic" width="120" height="14"></canvas></div>
+    </div>
+    <div class="strip" data-strip="master">
+      <div class="strip-head"><h2>MASTER</h2><canvas class="meter" id="mMaster" width="120" height="14"></canvas></div>
+      <div class="loud card">
+        <div><span>Momentary</span><b id="lM">—</b></div>
+        <div><span>Short-term</span><b id="lS">—</b></div>
+        <div><span>Integrated</span><b id="lI">—</b></div>
+        <div><span>Peak</span><b id="lP">—</b></div>
+        <button id="btnLoudReset" class="small">リセット</button>
+        <div class="hint">YouTube の基準は約 -14 LUFS。歌枠は -16〜-14 が目安。</div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="foot">
+    <details>
+      <summary>使い方（クイックスタート）</summary>
+      <ol>
+        <li>Chrome / Edge で開き「エンジン起動」。マイクを選び、入力チャンネル（IN1/IN2）を合わせる</li>
+        <li>YouTube のカラオケ動画を<strong>別タブ</strong>で開き「YouTubeタブを取り込む」→ そのタブを選択し「タブの音声も共有する」をオン（タブ側のスピーカー音は自動で止まります）</li>
+        <li>モニター出力にイヤホン、配信出力に仮想デバイス（VB-CABLE 等）を指定。OBS ではその仮想デバイスを音声入力に追加（デスクトップ音声は切る）</li>
+        <li>「自動推定」で遅延補正を入れ、録音ボタンで一度録って声と伴奏のズレを確認</li>
+        <li>曲調に合わせて 1〜6 でシーン切替。MC の間は 6（MC / トーク）</li>
+      </ol>
+      <p>キー：1〜6 シーン / Shift+数字 保存 / D 押している間スロー / T タップテンポ / Esc パニック</p>
+    </details>
+  </footer>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
