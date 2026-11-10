@@ -458,14 +458,18 @@ void MainComponent::renameScene(int i) {
     renameWindow->addTextEditor("name", scenes[(size_t) i].name);
     renameWindow->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
     renameWindow->addButton(u8("キャンセル"), 0, juce::KeyPress(juce::KeyPress::escapeKey));
-    renameWindow->enterModalState(true, juce::ModalCallbackFunction::create([this, i](int r) {
-        if (r == 1 && renameWindow) {
-            const auto name = renameWindow->getTextEditorContents("name").trim().substring(0, 24);
-            if (name.isNotEmpty()) scenes[(size_t) i].name = name;
-            renderScenes();
-            saveCountdown = 30;
+    juce::Component::SafePointer<MainComponent> safe(this);
+    renameWindow->enterModalState(true, juce::ModalCallbackFunction::create([safe, i](int r) {
+        if (safe == nullptr) return;
+        if (r == 1 && safe->renameWindow) {
+            const auto name = safe->renameWindow->getTextEditorContents("name").trim().substring(0, 24);
+            if (name.isNotEmpty()) safe->scenes[(size_t) i].name = name;
+            safe->renderScenes();
+            safe->saveCountdown = 30;
         }
-        juce::MessageManager::callAsync([sp = juce::Component::SafePointer<MainComponent>(this)] { if (sp) sp->renameWindow.reset(); });
+        juce::MessageManager::callAsync([safe] {
+            if (safe != nullptr) safe->renameWindow.reset();
+        });
     }), false);
 }
 
@@ -507,7 +511,12 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput*, const juce::Midi
     int scene = -1;
     if (m.isProgramChange()) scene = m.getProgramChangeNumber();
     if (m.isNoteOn() && m.getNoteNumber() >= 36 && m.getNoteNumber() < 42) scene = m.getNoteNumber() - 36;
-    if (scene >= 0 && scene < 6) juce::MessageManager::callAsync([sp = juce::Component::SafePointer<MainComponent>(this), scene] { if (sp) sp->recallScene(scene); });
+    if (scene >= 0 && scene < 6) {
+        juce::Component::SafePointer<MainComponent> safe(this);
+        juce::MessageManager::callAsync([safe, scene] {
+            if (safe != nullptr) safe->recallScene(scene);
+        });
+    }
 }
 
 // ------------------------------------------------------------------ 録音

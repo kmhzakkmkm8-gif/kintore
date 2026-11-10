@@ -63,8 +63,9 @@ public:
         }
         fillAvg += (avail - fillAvg) * 0.01; // producer のブロック単位の揺れをならす
         const double err = (fillAvg - target) / target;
-        integ = juce::jlimit(-0.004, 0.004, integ + err * 2e-5);
-        const double corr = juce::jlimit(-0.01, 0.01, err * 0.002 + integ);
+        // PI 制御（固有周期 約60秒・減衰比 約0.7）。積分項が「定常的なクロックのずれ」の推定値になる
+        integ = juce::jlimit(-0.004, 0.004, integ + err * 4e-4 * (n / cr));
+        const double corr = juce::jlimit(-0.01, 0.01, err * 0.006 + integ);
         const double ratio = pr / cr * (1.0 + corr);
         const int needed = (int) std::ceil(n * ratio) + 4;
         if (needed > (int) tmpL.size() || avail < needed) {
@@ -85,7 +86,7 @@ public:
         interpR.process(ratio, tmpR.data(), R, n);
         fifo.finishedRead(juce::jmin(used, needed));
         fillMs.store((float) (avail / pr * 1000.0));
-        ppm.store((float) (corr * 1e6));
+        ppm.store((float) (integ * 1e6));
     }
 
     bool isActive() const { return juce::Time::getMillisecondCounter() - lastPushMs.load() < 500; }
